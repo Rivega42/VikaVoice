@@ -82,6 +82,21 @@
   - Своя прошивка, опрос API Вики `GET /status`
   - Показывает состояние (слушает / думает / приватный режим)
 
+## Milestone 6 — Multi-Device (несколько Вик как одна)
+
+**Цель:** 3–5 устройств по дому работают как единая система. См. [MULTI-DEVICE.md](MULTI-DEVICE.md).
+
+- [ ] MQTT broker на hub-устройстве (mosquitto)
+- [ ] mDNS discovery: `_vika._tcp.local`, roles hub/satellite
+- [ ] Arbitration по wake-word confidence (Echo Spatial Perception style, 250мс)
+- [ ] Единая OCPlatform-сессия для всех устройств пользователя
+- [ ] Retained state: private-mode, home-mode, timers
+- [ ] Handoff между комнатами (войсовый разговор переезжает)
+- [ ] Broadcast-команды («всем: ужин готов»)
+- [ ] Failover: hub упал → следующее устройство подхватывает
+
+**Закладывается архитектурно уже в MVP:** MQTT client stub, session ID в OCPlatform — чтобы потом не переписывать с нуля.
+
 ## Backlog
 
 - Кастомная wake-word модель "Вика" (обучение через Sherpa-ONNX)

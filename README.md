@@ -93,6 +93,7 @@ VikaVoice/
 │   ├── ARCHITECTURE.md     # Техническая архитектура, стек
 │   ├── SKILLS.md           # Описание навыков (home / facilitator / transcriber / private)
 │   ├── INTEGRATIONS.md     # УМНЫй Дом Яндекс, ESP-компаньон, AP-режим и т.д.
+│   ├── MULTI-DEVICE.md     # Несколько Вик как единая система (MQTT, arbitration, handoff)
 │   ├── HARDWARE-BOM.md     # Список железа + цены + ссылки
 │   └── ROADMAP.md          # Этапы разработки
 ├── firmware/               # Клиент на RPi4 (пока пусто)
