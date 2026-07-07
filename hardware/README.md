@@ -5,7 +5,7 @@
 > [0002 микрофонный массив](../docs/adr/0002-mic-array.md)
 
 Каталог аппаратных артефактов. Прототип собирается из готовых модулей
-по BOM ([docs/hardware/](../docs/hardware/bom-notes.md)).
+по единому BOM ([docs/hardware/](../docs/hardware/README.md)).
 
 ## Что уже есть
 
@@ -25,7 +25,7 @@
 - `schematics/` — схемы подключения кнопок, LED-кольца, аппаратного mute,
   line-in — EPIC-4.
 - `mic-array/` — собственная плата 6–8 MEMS на XVF-3800 для серии (плата + прошивка,
-  NRE — см. [bom-notes](../docs/hardware/bom-notes.md)) — не раньше пилотов (EPIC-8).
+  NRE — см. [единый BOM](../docs/hardware/README.md)) — не раньше пилотов (EPIC-8).
 
 ## Правила
 

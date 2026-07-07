@@ -272,7 +272,7 @@ wake-word «Вика» с FAR ≤ 2/сутки, FRR ≤ 10% @ 3 м; та же п
   - [ ] [Умный Дом Яндекс](integrations/yandex-smart-home.md): OAuth-токен, `smart_home.query/action`, автопродление
   - [ ] [ESP32-компаньон](integrations/esp-companion.md): прошивка, опрос `/status`
 - **E8.4 Серийное железо (старт)**
-  - [ ] ТЗ подрядчику на плату 6–8 MEMS (XVF-3800); оценка NRE ([bom-notes](hardware/bom-notes.md))
+  - [ ] ТЗ подрядчику на плату 6–8 MEMS (XVF-3800); оценка NRE ([единый BOM](hardware/README.md))
 
 ---
 

@@ -19,7 +19,7 @@
 своя плата 6–8 MEMS на XVF-3800 — [ADR-0002](../adr/0002-mic-array.md)).
 
 \* Ориентир для прототипной партии; детализация — [bom-edge.csv](../hardware/bom-edge.csv),
-[bom-thin.csv](../hardware/bom-thin.csv), допущения — [bom-notes.md](../hardware/bom-notes.md).
+[bom-thin.csv](../hardware/bom-thin.csv), допущения — [единый BOM](../hardware/README.md).
 
 ## Матрица «устройство × редакция»
 

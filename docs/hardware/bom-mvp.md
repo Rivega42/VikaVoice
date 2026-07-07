@@ -40,4 +40,4 @@
 
 Продуктовые конфигурации в долларах и с опциями — [bom-edge.csv](bom-edge.csv),
 [bom-thin.csv](bom-thin.csv), [bom-options.csv](bom-options.csv); допущения и NRE —
-[bom-notes.md](bom-notes.md).
+[единый BOM](README.md).
