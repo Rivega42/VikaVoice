@@ -5,11 +5,13 @@
 лёгким клиентом, который шлёт поток на наше устройство/сервер.
 
 ## Установка
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ## Запуск
+
 ```bash
 # показать аудиоустройства
 python system_audio_client.py --list

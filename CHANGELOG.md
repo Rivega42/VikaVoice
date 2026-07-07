@@ -6,6 +6,7 @@
 ## [Unreleased] — 2026-07-07
 
 ### Добавлено
+
 - LICENSE (Apache-2.0 для кода; документация — CC-BY-4.0, см. README), CONTRIBUTING, CHANGELOG.
 - `.github/`: CI (markdownlint, проверка ссылок, ruff, pytest), шаблоны issue и PR.
 - ADR 0001–0009 (формат MADR): платформа, микрофонный массив, вендоринг Meetily, ASR, TTS,
@@ -18,6 +19,7 @@
 - `procurement/TZ_44FZ.md` — черновик ТЗ в Markdown (исходник вместо бинарника).
 
 ### Изменено
+
 - Документация реструктурирована по Diátaxis: `docs/{concept,architecture,adr,reference,guides,hardware,integrations,compliance}/`, единый индекс `docs/README.md`.
 - Roadmap переписан в эпики EPIC-0..9; транскрайбер идёт раньше голосового ассистента.
 - ASCII-диаграммы заменены на mermaid.
@@ -28,6 +30,7 @@
   (везде «OCPlatform»); заявления «работает/протестировано» заменены честными статусами.
 
 ### Удалено
+
 - `_МАНИФЕСТ.md` (его роль — этот файл и индекс `docs/README.md`).
 - `engineering/BOM.xlsx` (заменён CSV в `docs/hardware/`), пустые каталоги `firmware/*`.
 - Дублирующие документы: `docs/CONCEPT.md`, `docs/MEETING-COMPLEX-INDEX.md`,

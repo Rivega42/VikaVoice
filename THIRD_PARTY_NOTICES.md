@@ -5,6 +5,7 @@
 Карта заимствований — [docs/compliance/reuse-map.md](docs/compliance/reuse-map.md).
 
 ## Yandex Aperiodic Grille — CC BY-SA 4.0
+
 - Репозиторий: https://github.com/yandex/aperiodic_grille
 - Автор: Yandex (Григорий Анненков, инженер внедрения)
 - Статья: https://habr.com/ru/companies/yandex/articles/673192/
@@ -14,6 +15,7 @@
 - Атрибуция: [hardware/GRILLE-ATTRIBUTION.md](hardware/GRILLE-ATTRIBUTION.md)
 
 ## Meetily (Zackriya Solutions) — MIT
+
 - Репозиторий: https://github.com/Zackriya-Solutions/meetily
 - Используем (Community, MIT): движок Whisper-сервера, интеграцию Parakeet и Ollama,
   FastAPI-бэкенд и хранение, docker-compose, подход к захвату системного звука.
@@ -22,6 +24,7 @@
 - НЕ используем компоненты Meetily PRO/Enterprise (отдельная кодовая база, не MIT).
 
 ## Голосовой стек
+
 - **whisper.cpp** — MIT (код); веса моделей Whisper — MIT.
 - **Piper TTS** — MIT (код); голоса ru (irina, ruslan) — проверить лицензию конкретной модели.
 - **silero-vad** — MIT.
@@ -33,6 +36,7 @@
   [ADR-0006](docs/adr/0006-wake-word.md).
 
 ## Модели и веса (проверять отдельно от кода движков)
+
 - **NVIDIA NeMo / Parakeet** — условия на веса моделей уточнить у NVIDIA (возможны
   ограничения по применению/юрисдикциям).
 - **pyannote.audio** — код MIT; веса моделей на HuggingFace гейтятся (требуют принятия
@@ -45,5 +49,6 @@
 - **ffmpeg** — LGPL/GPL в зависимости от сборки; учитывать при дистрибуции.
 
 ## Требование MIT
+
 При распространении сохранять уведомление об авторских правах и текст лицензии.
 Данный файл + сохранённые `LICENSE.md` вендоренных компонентов это обеспечивают.

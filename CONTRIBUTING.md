@@ -12,7 +12,7 @@
 
 Используем [Conventional Commits](https://www.conventionalcommits.org/ru/):
 
-```
+```text
 <type>(<scope>): <кратко, в повелительном наклонении, на русском>
 ```
 
