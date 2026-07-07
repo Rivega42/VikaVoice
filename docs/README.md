@@ -63,7 +63,7 @@
 | [bom-edge.csv](hardware/bom-edge.csv) | BOM толстого устройства (RPi5), база — $356 | ✅ |
 | [bom-options.csv](hardware/bom-options.csv) | Опции Edge (+$129) | ✅ |
 | [bom-thin.csv](hardware/bom-thin.csv) | BOM тонкого устройства (Zero 2W) — $147 | ✅ |
-| [**Единый BOM**](hardware/README.md) | Сводка всех конфигураций, допущения, NRE — источник истины | ✅ |
+| [**Единый BOM**](hardware/README.md) | Закупка на 3 устройства + все конфигурации, допущения, NRE — источник истины | ✅ |
 | [bom-pilot.md](hardware/bom-pilot.md) + [bom-pilot-3x.csv](hardware/bom-pilot-3x.csv) | Пилотная партия 3 шт, корпуса — SLA-печать смолой | ✅ |
 | [bom-mvp.md](hardware/bom-mvp.md) | Домашний MVP на RPi4 (dev) | 🟡 историческая |
 
