@@ -1,0 +1,44 @@
+# Контейнеризированное ядро (адаптировано из подхода Meetily backend/docker-compose.yml).
+# Одно ядро -> три редакции (Edge / Cloud / On-prem) через переменные окружения.
+#
+# Запуск ingest+API:      docker compose up ingest
+# Транскрипция (Whisper):  сервис whisper подтягивается вендорингом (scripts/vendor_meetily.sh)
+version: "3.8"
+
+services:
+  # Приём аудио от клиента-компаньона и с устройства (наш слой)
+  ingest:
+    build: { context: ., dockerfile: docker/Dockerfile.ingest }
+    ports: ["8200:8200"]
+    environment:
+      - ASR_BACKEND=${ASR_BACKEND:-whisper}      # whisper | remote
+      - EDITION=${EDITION:-edge}                 # edge | cloud | onprem
+      - WHISPER_URL=http://whisper:8178/inference
+    restart: unless-stopped
+
+  # Движок распознавания — из Meetily (whisper.cpp), собирается после вендоринга
+  whisper:
+    build:
+      context: ./core/vendor/meetily/backend
+      dockerfile: Dockerfile.server-cpu          # -gpu для CUDA/Jetson
+    ports: ["8178:8178"]
+    environment:
+      - WHISPER_MODEL=${WHISPER_MODEL:-models/ggml-base.bin}
+      - WHISPER_LANGUAGE=${WHISPER_LANGUAGE:-ru}  # русский по умолчанию
+      - WHISPER_USE_GPU=${WHISPER_USE_GPU:-false}
+      - WHISPER_DIARIZE=${WHISPER_DIARIZE:-true}
+    volumes: ["whisper_models:/app/models"]
+    restart: unless-stopped
+    profiles: ["with-asr"]
+
+  # Локальная LLM для резюме (офлайн, для Edge/On-prem) — из экосистемы Meetily/Ollama
+  ollama:
+    image: ollama/ollama:latest
+    ports: ["11434:11434"]
+    volumes: ["ollama:/root/.ollama"]
+    restart: unless-stopped
+    profiles: ["with-llm"]
+
+volumes:
+  whisper_models:
+  ollama:

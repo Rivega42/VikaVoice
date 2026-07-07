@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+software/core/vendor/meetily/
+.env
