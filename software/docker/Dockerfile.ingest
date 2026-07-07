@@ -1,0 +1,14 @@
+# Образ ядра приёма аудио (ingest). Контекст сборки — каталог software/.
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY core/ core/
+
+ENV VIKAVOICE_INGEST_DIR=/data/ingest_sessions
+EXPOSE 8200
+
+CMD ["uvicorn", "core.api.ingest_ws:app", "--host", "0.0.0.0", "--port", "8200"]

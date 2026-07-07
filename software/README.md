@@ -1,58 +1,84 @@
-# Стартовый каркас продукта (форк-основа)
+# software/ — программное ядро (скелет)
+
+> Статус: 🟡 скелет · Обновлено: 2026-07-07 · Связанные документы:
+> [гайд запуска](../docs/guides/run-core.md), [reuse-map](../docs/compliance/reuse-map.md),
+> [ADR-0003 вендоринг](../docs/adr/0003-vendoring-meetily.md),
+> [ADR-0009 протокол ingest](../docs/adr/0009-ingest-protocol.md)
 
 Ядро продукта записи и транскрибации переговоров: берём программную базу из
 **Meetily** (MIT), строим вокруг неё наш звуковой тракт, запоминание голоса, три
 редакции и оба пути захвата системного звука.
 
-Полная карта переиспользования — в [`REUSE_MAP.md`](REUSE_MAP.md).
-Атрибуция сторонних лицензий — в [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+Карта переиспользования — [`docs/compliance/reuse-map.md`](../docs/compliance/reuse-map.md).
+Атрибуция сторонних лицензий — [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md).
 
 ## Структура
-```
-meeting-device/
-├─ REUSE_MAP.md               # что откуда берём (главный документ)
-├─ THIRD_PARTY_NOTICES.md     # атрибуция MIT (Meetily) и апстрима
-├─ docker-compose.yml         # ядро -> Edge/Cloud/On-prem через env
-├─ scripts/
-│  └─ vendor_meetily.sh       # подтягивает нужные части Meetily в core/vendor/
-├─ core/
-│  ├─ api/ingest_ws.py        # приём аудио по WebSocket (РАБОТАЕТ, протестировано)
-│  ├─ asr/base.py             # подключаемый ASR-бэкенд (интерфейс)
-│  ├─ voice_enrollment/enroll.py  # запоминание голоса + именование (наша фича)
-│  ├─ mic_array/README.md     # интерфейс к аппаратному массиву (beamforming/DOA)
-│  └─ vendor/                 # сюда vendor_meetily.sh кладёт код Meetily
-├─ companion-client/          # ПРОГРАММНЫЙ захват системного звука (клиент)
-│  └─ system_audio_client.py  # РАБОТАЕТ (проверено в режиме --test)
-└─ docs/
-   └─ hardware_line_in.md     # АППАРАТНЫЙ захват системного звука (проводом)
+
+```text
+software/
+├── docker-compose.yml            # ядро -> Edge/Cloud/On-prem через env (ADR-0007)
+├── docker/Dockerfile.ingest      # образ сервиса ingest
+├── pyproject.toml                # пакет core + dev-зависимости (pytest, ruff)
+├── requirements.txt              # рантайм-зависимости ядра
+├── scripts/
+│   └── vendor_meetily.sh         # подтягивает части Meetily в core/vendor/ (MIT, с лицензией)
+├── core/
+│   ├── api/ingest_ws.py          # приём аудио по WebSocket (скелет, покрыт тестами)
+│   ├── asr/base.py               # подключаемый ASR-бэкенд (интерфейс; реализации — EPIC-1)
+│   ├── voice_enrollment/enroll.py# запоминание голоса + именование (интерфейс; эмбеддер — EPIC-2)
+│   ├── mic_array/README.md       # слой аппаратного массива (beamforming/DOA) — EPIC-4
+│   └── vendor/                   # сюда vendor_meetily.sh кладёт код Meetily (в .gitignore)
+├── companion-client/             # программный захват системного звука ПК
+│   └── system_audio_client.py    # стриминг в ядро; --test работает без аудиоустройств
+├── device/                       # клиент устройства (wake-word, TTS, LED) — появится в EPIC-5
+└── tests/                        # pytest: enrollment + контракт ingest-протокола
 ```
 
-## Как сделать настоящий форк (на вашем GitHub)
-Это каркас-обёртка; сам Meetily остаётся отдельным апстримом, чтобы получать обновления.
+## Честный статус компонентов
+
+| Компонент | Состояние |
+|-----------|-----------|
+| `core/api/ingest_ws.py` | ✅ скелет работает: заголовок → PCM → WAV; есть тесты |
+| `companion-client` | ✅ `--test`-режим (синус) проходит сквозной путь; реальный захват зависит от ОС |
+| handoff в ASR | ❌ **заглушка** — транскрипции пока нет (EPIC-1) |
+| `core/asr`, `core/voice_enrollment` | интерфейсы без реализаций (EPIC-1/2) |
+| `core/mic_array` | только описание слоя (EPIC-4) |
+
+## Быстрый старт
+
+Полный гайд — [`docs/guides/run-core.md`](../docs/guides/run-core.md). Кратко:
+
 ```bash
-# 1) форк Meetily на свой аккаунт (через веб или gh cli)
-gh repo fork Zackriya-Solutions/meetily --clone=false
+cd software
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
 
-# 2) в этом репозитории подтянуть нужные части (в core/vendor/meetily):
-bash scripts/vendor_meetily.sh
-# при желании закрепить версию:  MEETILY_REF=v0.4.0 bash scripts/vendor_meetily.sh
+uvicorn core.api.ingest_ws:app --port 8200          # терминал 1: ядро
+python companion-client/system_audio_client.py --test  # терминал 2: тестовый поток
+# результат: WAV в software/data/ingest_sessions/
+
+pytest -q   # тесты
 ```
+
+## Вендоринг Meetily
+
+```bash
+bash scripts/vendor_meetily.sh                       # ветка апстрима по умолчанию
+MEETILY_REF=<тег|коммит> bash scripts/vendor_meetily.sh   # воспроизводимо (рекомендуется)
+```
+
+Скрипт можно запускать из любого каталога; код ложится в `software/core/vendor/meetily/`
+(в `.gitignore`), лицензия MIT сохраняется обязательно.
 
 ## Захват системного звука — два пути
-- **Программный** — `companion-client/` (клиент на ПК шлёт звук в ядро). Windows: WASAPI
-  loopback, Linux: Pulse monitor, macOS: BlackHole/ScreenCaptureKit. Проверено сквозным
-  тестом.
-- **Аппаратный** — `docs/hardware_line_in.md` (звук ПК проводом в линейный вход устройства).
 
-## Быстрый прогон (что уже работает)
-```bash
-# ядро: приём аудио
-cd meeting-device && PYTHONPATH=. uvicorn core.api.ingest_ws:app --port 8200
-# в другом окне: клиент шлёт тестовый сигнал
-python companion-client/system_audio_client.py --test
-# в /tmp/ingest_sessions появится WAV принятого потока
-```
+- **Программный** — `companion-client/` (клиент на ПК шлёт поток в ядро). Windows: WASAPI
+  loopback, Linux: Pulse/PipeWire monitor, macOS: BlackHole/ScreenCaptureKit.
+- **Аппаратный** — проводом в линейный вход устройства:
+  [`docs/guides/hardware-line-in.md`](../docs/guides/hardware-line-in.md).
 
-## Что ещё построить (см. REUSE_MAP)
-Звуковой тракт массива (beamforming/DOA), эмбеддер голоса для enrollment, веб-кабинет,
-локализация RU, слой 152-ФЗ/44-ФЗ, привязка whisper/parakeet к `core/asr/base.py`.
+## Что строить дальше
+
+См. [roadmap](../docs/roadmap.md): привязка whisper/parakeet к `core/asr/base.py` (EPIC-1),
+эмбеддер голоса для enrollment (EPIC-2), смысловой слой (EPIC-3), звуковой тракт массива
+(EPIC-4), клиент устройства в `device/` (EPIC-5).

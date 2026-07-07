@@ -1,19 +1,25 @@
 # Контейнеризированное ядро (адаптировано из подхода Meetily backend/docker-compose.yml).
-# Одно ядро -> три редакции (Edge / Cloud / On-prem) через переменные окружения.
+# Одно ядро -> три редакции (Edge / Cloud / On-prem) через переменные окружения — ADR-0007.
 #
-# Запуск ingest+API:      docker compose up ingest
-# Транскрипция (Whisper):  сервис whisper подтягивается вендорингом (scripts/vendor_meetily.sh)
-version: "3.8"
+# Запуск ingest+API:       docker compose up ingest
+# Транскрипция (Whisper):  сервис whisper требует вендоринга (scripts/vendor_meetily.sh),
+#                          затем: docker compose --profile with-asr up
+# Локальная LLM (резюме):  docker compose --profile with-llm up
 
 services:
   # Приём аудио от клиента-компаньона и с устройства (наш слой)
   ingest:
-    build: { context: ., dockerfile: docker/Dockerfile.ingest }
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ingest
     ports: ["8200:8200"]
     environment:
-      - ASR_BACKEND=${ASR_BACKEND:-whisper}      # whisper | remote
+      - ASR_BACKEND=${ASR_BACKEND:-whisper}      # whisper | remote (core/asr/base.py)
       - EDITION=${EDITION:-edge}                 # edge | cloud | onprem
       - WHISPER_URL=http://whisper:8178/inference
+      - VIKAVOICE_INGEST_DIR=/data/ingest_sessions
+    volumes:
+      - ingest_data:/data
     restart: unless-stopped
 
   # Движок распознавания — из Meetily (whisper.cpp), собирается после вендоринга
@@ -33,7 +39,8 @@ services:
 
   # Локальная LLM для резюме (офлайн, для Edge/On-prem) — из экосистемы Meetily/Ollama
   ollama:
-    image: ollama/ollama:latest
+    # Версия закреплена (воспроизводимость); обновлять осознанно, не latest.
+    image: ollama/ollama:0.5.7
     ports: ["11434:11434"]
     volumes: ["ollama:/root/.ollama"]
     restart: unless-stopped
@@ -42,3 +49,4 @@ services:
 volumes:
   whisper_models:
   ollama:
+  ingest_data:
