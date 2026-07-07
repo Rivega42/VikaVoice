@@ -1,0 +1,32 @@
+name: "ADR proposal"
+description: "Предложение архитектурного решения (docs/adr/)"
+labels: ["adr"]
+title: "ADR: "
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Контекст и проблема
+      description: "Какое решение нужно принять и почему сейчас"
+    validations:
+      required: true
+  - type: textarea
+    id: options
+    attributes:
+      label: Рассмотренные варианты
+      placeholder: |
+        1. Вариант А — плюсы/минусы
+        2. Вариант Б — плюсы/минусы
+    validations:
+      required: true
+  - type: textarea
+    id: decision
+    attributes:
+      label: Предлагаемое решение
+    validations:
+      required: true
+  - type: textarea
+    id: consequences
+    attributes:
+      label: Последствия
+      description: "Что становится проще/сложнее; какие документы и код затронет; лицензии"

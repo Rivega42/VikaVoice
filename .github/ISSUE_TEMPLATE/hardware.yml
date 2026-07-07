@@ -1,0 +1,27 @@
+name: "Hardware"
+description: "Вопрос по железу: BOM, закупка, сборка, bring-up"
+labels: ["hardware"]
+body:
+  - type: dropdown
+    id: tier
+    attributes:
+      label: Конфигурация
+      options:
+        - "Edge (RPi5) — docs/hardware/bom-edge.csv"
+        - "Тонкое устройство (Zero 2W) — docs/hardware/bom-thin.csv"
+        - "Домашний MVP (RPi4) — docs/hardware/bom-mvp.md"
+        - "Другое / серия (XVF-3800)"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: Суть
+      description: "Компонент, проблема совместимости, изменение BOM, результат теста"
+    validations:
+      required: true
+  - type: textarea
+    id: refs
+    attributes:
+      label: Ссылки
+      description: "Datasheet, магазин, замеры. Связанные ADR: 0001 (платформа), 0002 (микрофоны)"
