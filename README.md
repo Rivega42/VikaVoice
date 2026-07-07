@@ -100,6 +100,7 @@ VikaVoice/
 ├── firmware/               # Клиент на RPi4 (пока пусто)
 └── hardware/               # Схемы, 3D-модели корпуса
     ├── INDUSTRIAL-DESIGN.md  # Форм-фактор, решётка, ткань, материалы
+    ├── CASE-COVER.md        # Кожух — DIY-опыт сообщества (yaboard/4pda)
     └── GRILLE-ATTRIBUTION.md # Атрибуция Yandex Aperiodic Grille (CC BY-SA 4.0)
 ```
 
