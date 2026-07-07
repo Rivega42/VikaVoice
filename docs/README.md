@@ -64,6 +64,7 @@
 | [bom-options.csv](hardware/bom-options.csv) | Опции Edge (+$129) | ✅ |
 | [bom-thin.csv](hardware/bom-thin.csv) | BOM тонкого устройства (Zero 2W) — $147 | ✅ |
 | [bom-notes.md](hardware/bom-notes.md) | Сводка, допущения, NRE | ✅ |
+| [bom-pilot.md](hardware/bom-pilot.md) + [bom-pilot-3x.csv](hardware/bom-pilot-3x.csv) | Пилотная партия 3 шт, корпуса — SLA-печать смолой | ✅ |
 | [bom-mvp.md](hardware/bom-mvp.md) | Домашний MVP на RPi4 (dev) | 🟡 историческая |
 
 CAD/схемы/серийная плата — каталог [`hardware/`](../hardware/README.md) в корне репозитория.
