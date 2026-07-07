@@ -82,6 +82,32 @@
   - Своя прошивка, опрос API Вики `GET /status`
   - Показывает состояние (слушает / думает / приватный режим)
 
+## Milestone 5.5 — Мобильный клиент (Вика в наушниках)
+
+**Цель:** Вика доступна через телефон + любые наушники. См. [MOBILE.md](MOBILE.md).
+
+### Этап A — PWA (1-2 недели)
+- [ ] `vika.grandhub.ru` — Progressive Web App
+- [ ] Web Speech API для STT + TTS в браузере
+- [ ] Tap-to-talk интерфейс
+- [ ] Service Worker для offline hints
+- [ ] Подключение к OCPlatform gateway
+
+### Этап B — Нативное приложение (2-3 месяца)
+- [ ] Flutter или React Native
+- [ ] Wake-word «Вика» в фоне (Porcupine SDK)
+- [ ] iOS Speech Framework / Android Speech API для STT/TTS
+- [ ] Приватный режим через on-device LLM (Gemma 3n / Phi-3.5-mini)
+- [ ] App Store + Google Play
+
+### Этап C — WebRTC realtime (3-6 месяцев)
+- [ ] LiveKit интеграция (из voice-agent-platform)
+- [ ] Streaming STT + TTS
+- [ ] Barge-in — перебивать Вику как человека
+- [ ] p50 TTFA < 800мс
+
+**Критерий A:** открыл в Safari/Chrome → говоришь → Вика отвечает в наушники.
+
 ## Milestone 6 — Multi-Device (несколько Вик как одна)
 
 **Цель:** 3–5 устройств по дому работают как единая система. См. [MULTI-DEVICE.md](MULTI-DEVICE.md).

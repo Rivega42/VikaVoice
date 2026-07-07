@@ -94,6 +94,7 @@ VikaVoice/
 │   ├── SKILLS.md           # Описание навыков (home / facilitator / transcriber / private)
 │   ├── INTEGRATIONS.md     # УМНЫй Дом Яндекс, ESP-компаньон, AP-режим и т.д.
 │   ├── MULTI-DEVICE.md     # Несколько Вик как единая система (MQTT, arbitration, handoff)
+│   ├── MOBILE.md          # Вика в наушниках через телефон (PWA / native / WebRTC)
 │   ├── HARDWARE-BOM.md     # Список железа + цены + ссылки
 │   └── ROADMAP.md          # Этапы разработки
 ├── firmware/               # Клиент на RPi4 (пока пусто)
