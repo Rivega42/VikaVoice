@@ -4,6 +4,15 @@
 Файлы лицензий сохраняются при вендоринге (см. `software/scripts/vendor_meetily.sh`).
 Карта заимствований — [docs/compliance/reuse-map.md](docs/compliance/reuse-map.md).
 
+## Yandex Aperiodic Grille — CC BY-SA 4.0
+- Репозиторий: https://github.com/yandex/aperiodic_grille
+- Автор: Yandex (Григорий Анненков, инженер внедрения)
+- Статья: https://habr.com/ru/companies/yandex/articles/673192/
+- Используем: 3D-модель апериодической решётки для боковой поверхности корпуса VikaVoice.
+- Лицензия: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
+- Наши модификации (масштаб и адаптация под наши размеры) тоже публикуются под CC BY-SA 4.0.
+- Атрибуция: [hardware/GRILLE-ATTRIBUTION.md](hardware/GRILLE-ATTRIBUTION.md)
+
 ## Meetily (Zackriya Solutions) — MIT
 - Репозиторий: https://github.com/Zackriya-Solutions/meetily
 - Используем (Community, MIT): движок Whisper-сервера, интеграцию Parakeet и Ollama,

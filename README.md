@@ -51,7 +51,11 @@ VikaVoice/
 ├── software/              # программное ядро: ingest (WS) + интерфейсы ASR/enrollment,
 │   │                      #   клиент-компаньон, docker, тесты (pytest)
 │   └── device/            #   клиент устройства (появится в EPIC-5)
-├── hardware/              # CAD/схемы/серийная плата (заготовка)
+├── hardware/              # промышленный дизайн и CAD корпуса
+│   ├── INDUSTRIAL-DESIGN.md   # форм-фактор, решётка, ткань, материалы
+│   ├── CASE-COVER.md          # кожух — DIY-опыт сообщества (yaboard/4pda)
+│   ├── GRILLE-ATTRIBUTION.md  # атрибуция Yandex Aperiodic Grille (CC BY-SA 4.0)
+│   └── grille/                # CAD решётки: original/ (Яндекс) + vika/ (адаптация)
 └── procurement/           # черновик ТЗ по 44-ФЗ (Markdown + .docx-экспорт)
 ```
 
