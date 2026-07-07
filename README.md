@@ -99,6 +99,8 @@ VikaVoice/
 │   └── ROADMAP.md          # Этапы разработки
 ├── firmware/               # Клиент на RPi4 (пока пусто)
 └── hardware/               # Схемы, 3D-модели корпуса
+    ├── INDUSTRIAL-DESIGN.md  # Форм-фактор, решётка, ткань, материалы
+    └── GRILLE-ATTRIBUTION.md # Атрибуция Yandex Aperiodic Grille (CC BY-SA 4.0)
 ```
 
 ---
