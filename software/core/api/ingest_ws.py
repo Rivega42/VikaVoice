@@ -22,7 +22,10 @@ import pathlib
 import uuid
 import wave
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+
+from core.asr.base import make_backend
+from core.storage import db
 
 logger = logging.getLogger("vikavoice.ingest")
 
@@ -38,13 +41,24 @@ def _out_dir() -> pathlib.Path:
     return out
 
 
-def handoff_to_asr(pcm_path: str) -> dict:
-    """ЗАГЛУШКА: передача записанной сессии в ASR-бэкенд.
+def handoff_to_asr(session_id: str, wav_path: str, source: str | None, rate: int) -> dict:
+    """Ставит завершённую сессию в очередь транскрибации (запись в SQLite).
 
-    Реализация — EPIC-1: подключить core/asr/base.py (LocalWhisper -> вендоренный
-    whisper.cpp-сервер Meetily, POST на WHISPER_URL). Пока транскрипции НЕТ.
+    Сама транскрибация запускается отдельно: POST /sessions/{id}/transcribe
+    (синхронно, для скелета) — см. docs/reference/api/ingest-ws.md.
     """
-    return {"status": "stub", "path": pcm_path}
+    db.create_session(session_id, wav_path, source, rate)
+    return {"status": "queued", "id": session_id}
+
+
+def _asr_backend():
+    """Фабрика ASR-бэкенда из окружения (подменяется в тестах)."""
+    kind = os.environ.get("ASR_BACKEND", "whisper")
+    if kind == "whisper":
+        return make_backend(
+            "whisper", url=os.environ.get("WHISPER_URL", "http://whisper:8178/inference")
+        )
+    return make_backend(kind)
 
 
 @app.get("/health")
@@ -52,11 +66,57 @@ def health() -> dict:
     return {"ok": True}
 
 
+@app.get("/sessions")
+def sessions() -> list[dict]:
+    return db.list_sessions()
+
+
+@app.get("/sessions/{session_id}/transcript")
+def transcript(session_id: str) -> dict:
+    rec = db.get_session(session_id)
+    if rec is None:
+        raise HTTPException(status_code=404, detail="сессия не найдена")
+    return {
+        "id": rec["id"],
+        "status": rec["status"],
+        "error": rec["error"],
+        "transcript": rec["transcript"],
+    }
+
+
+@app.post("/sessions/{session_id}/transcribe")
+def transcribe(session_id: str) -> dict:
+    """Синхронная транскрибация записанной сессии (скелет EPIC-1).
+
+    Фоновая очередь с воркером — после появления реального нагрузочного профиля.
+    """
+    rec = db.get_session(session_id)
+    if rec is None:
+        raise HTTPException(status_code=404, detail="сессия не найдена")
+    wav_path = pathlib.Path(rec["wav_path"])
+    if not wav_path.exists():
+        db.set_error(session_id, "WAV-файл сессии отсутствует на диске")
+        raise HTTPException(status_code=410, detail="аудиофайл сессии утрачен")
+    with wave.open(str(wav_path), "rb") as w:
+        rate = w.getframerate()
+        pcm = w.readframes(w.getnframes())
+    try:
+        segments = _asr_backend().transcribe(pcm, rate=rate)
+    except Exception as exc:  # ошибка бэкенда — фиксируем в записи сессии
+        db.set_error(session_id, str(exc))
+        raise HTTPException(status_code=502, detail=f"ошибка ASR: {exc}") from exc
+    db.set_transcript(session_id, segments)
+    return {"id": session_id, "status": "done", "segments": len(segments)}
+
+
 @app.websocket("/ingest")
 async def ingest(ws: WebSocket) -> None:
     await ws.accept()
     wav = None
     session_path: pathlib.Path | None = None
+    session_id = ""
+    source = None
+    rate = 16000
     frames = 0
     try:
         while True:
@@ -83,11 +143,13 @@ async def ingest(ws: WebSocket) -> None:
                 ):
                     await ws.close(code=1008, reason="неверный или отсутствующий token")
                     break
-                session_path = _out_dir() / f"session_{uuid.uuid4().hex}.wav"
+                session_id = uuid.uuid4().hex
+                session_path = _out_dir() / f"session_{session_id}.wav"
                 wav = wave.open(str(session_path), "wb")
                 wav.setnchannels(1)
                 wav.setsampwidth(2)
                 wav.setframerate(rate)
+                source = cfg.get("source")
                 logger.info("сессия начата: %s cfg=%s", session_path.name, cfg)
             elif msg.get("bytes") is not None:
                 if wav is None:
@@ -105,4 +167,7 @@ async def ingest(ws: WebSocket) -> None:
         if wav is not None:
             wav.close()
             logger.info("сессия закрыта: кадров=%d файл=%s", frames, session_path)
-            logger.info("handoff_to_asr -> %s", handoff_to_asr(str(session_path)))
+            logger.info(
+                "handoff_to_asr -> %s",
+                handoff_to_asr(session_id, str(session_path), source, rate),
+            )
