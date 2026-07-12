@@ -162,6 +162,42 @@ def get_session(session_id: str) -> dict | None:
     return d
 
 
+def search_transcripts(query: str, limit: int = 20) -> list[dict]:
+    """Поиск по тексту стенограмм (E7.1): LIKE по сегментам, сниппеты — в Python.
+
+    Для пилотных объёмов достаточно LIKE; FTS5 — при росте базы (отмечено в data-model).
+    """
+    q = query.strip().lower()
+    if not q:
+        return []
+    like = f"%{q}%"
+    with _conn() as c:
+        rows = c.execute(
+            "SELECT id, created_at, source, transcript_json FROM sessions "
+            "WHERE status='done' AND lower(transcript_json) LIKE ? "
+            "ORDER BY created_at DESC LIMIT ?",
+            (like, limit),
+        ).fetchall()
+    out = []
+    for r in rows:
+        segments = json.loads(r["transcript_json"])
+        hits = [
+            {"start": sg["start"], "speaker": sg.get("speaker"), "text": sg["text"]}
+            for sg in segments
+            if q in sg.get("text", "").lower()
+        ]
+        if hits:
+            out.append(
+                {
+                    "id": r["id"],
+                    "created_at": r["created_at"],
+                    "source": r["source"],
+                    "matches": hits[:10],
+                }
+            )
+    return out
+
+
 def list_sessions(limit: int = 100) -> list[dict]:
     with _conn() as c:
         rows = c.execute(

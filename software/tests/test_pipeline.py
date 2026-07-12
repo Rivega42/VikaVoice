@@ -7,6 +7,7 @@ import json
 
 import pytest
 from starlette.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 
 import core.api.ingest_ws as ingest_mod
 from core.asr.base import Segment
@@ -124,3 +125,45 @@ def test_summarize_and_protocol_endpoint(client, monkeypatch):
     assert p["analytics"]["total_seconds"] > 0
     assert "# Протокол: Тест" in p["markdown"]
     assert "| Анна | Задача | — |" in p["markdown"]
+
+
+def test_session_size_limit_1009(client, monkeypatch):
+    monkeypatch.setenv("VIKAVOICE_MAX_SESSION_MB", "0.001")  # ~1 КБ
+    c = client
+    with pytest.raises(WebSocketDisconnect) as e, c.websocket_connect("/ingest") as ws:
+        ws.send_text(json.dumps(HEADER))
+        for _ in range(10):  # 10 кадров по 3200 байт — превысим быстро
+            ws.send_bytes(FRAME_100MS)
+        ws.receive_bytes()
+    assert e.value.code == 1009
+    # записанное до лимита сохранено и зарегистрировано
+    assert len(c.get("/sessions").json()) == 1
+
+
+def test_auto_transcribe_background(client, monkeypatch):
+    import time
+
+    monkeypatch.setenv("VIKAVOICE_AUTO_TRANSCRIBE", "1")
+    monkeypatch.setattr(ingest_mod, "_asr_backend", lambda: StubASR())
+    sid = _record_session(client)
+    deadline = time.monotonic() + 5
+    status = None
+    while time.monotonic() < deadline:
+        status = client.get(f"/sessions/{sid}/transcript").json()["status"]
+        if status == "done":
+            break
+        time.sleep(0.05)
+    assert status == "done", f"фоновая транскрибация не завершилась: {status}"
+
+
+def test_search_finds_phrase(client, monkeypatch):
+    monkeypatch.setattr(ingest_mod, "_asr_backend", lambda: StubASR())
+    sid = _record_session(client)
+    client.post(f"/sessions/{sid}/transcribe")
+    r = client.get("/search", params={"q": "ТЕСТОВАЯ"})
+    assert r.status_code == 200
+    (hit,) = r.json()["results"]
+    assert hit["id"] == sid
+    assert hit["matches"][0]["text"] == "тестовая реплика"
+    assert client.get("/search", params={"q": "ничегонет"}).json()["results"] == []
+    assert client.get("/search").status_code == 422
