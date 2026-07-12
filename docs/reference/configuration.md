@@ -14,6 +14,12 @@
 | `WHISPER_URL` | `http://whisper:8178/inference` | адрес вендоренного whisper-сервера |
 | `WHISPER_MODEL` | `models/ggml-base.bin` | модель whisper.cpp |
 | `WHISPER_LANGUAGE` | `ru` | язык распознавания |
+| `VIKAVOICE_DB` | `data/vikavoice.db` | SQLite сессий/стенограмм/профилей голосов |
+| `VIKAVOICE_DIARIZER` | `single` | диаризатор (`single` — заглушка до выбора движка, E2.1) |
+| `VIKAVOICE_EMBEDDER` | — | эмбеддер голоса для «Знакомства» (E2.2; не задан — 501) |
+| `SUMMARY_BACKEND` | `ollama` | `ollama` \| `openai` (OpenAI-совместимый OCPlatform/облако) |
+| `OLLAMA_HOST` / `SUMMARY_MODEL` | `http://localhost:11434` / `qwen2.5:3b` | локальная LLM протокола |
+| `LLM_BASE_URL` / `LLM_API_KEY` | — | для `SUMMARY_BACKEND=openai`; секреты только в окружении |
 
 ## Конфиг устройства `/etc/vikavoice/config.yaml` (целевой контракт, EPIC-5/7)
 

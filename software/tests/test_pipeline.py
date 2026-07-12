@@ -84,3 +84,43 @@ def test_session_list_fields(client):
     assert rec["status"] == "queued"
     assert rec["source"] == "test"
     assert rec["rate"] == 16000
+
+
+class StubLLM:
+    def transcribe(self, *a, **k):  # не используется
+        raise AssertionError
+
+    def complete(self, system, user):
+        import json as _json
+
+        return _json.dumps(
+            {
+                "meeting_name": "Тест",
+                "summary": "Резюме.",
+                "decisions": ["Решение"],
+                "action_items": [{"assignee": "Анна", "task": "Задача", "due": None}],
+                "key_points": [],
+            },
+            ensure_ascii=False,
+        )
+
+
+def test_summarize_requires_transcript_first(client):
+    sid = _record_session(client)
+    assert client.post(f"/sessions/{sid}/summarize").status_code == 409
+    assert client.get(f"/sessions/{sid}/protocol").status_code == 404
+
+
+def test_summarize_and_protocol_endpoint(client, monkeypatch):
+    monkeypatch.setattr(ingest_mod, "_asr_backend", lambda: StubASR())
+    monkeypatch.setattr(ingest_mod, "_llm_backend", lambda: StubLLM())
+    sid = _record_session(client)
+    client.post(f"/sessions/{sid}/transcribe")
+    r = client.post(f"/sessions/{sid}/summarize")
+    assert r.status_code == 200
+    assert r.json()["protocol"]["meeting_name"] == "Тест"
+    p = client.get(f"/sessions/{sid}/protocol").json()
+    assert p["protocol"]["decisions"] == ["Решение"]
+    assert p["analytics"]["total_seconds"] > 0
+    assert "# Протокол: Тест" in p["markdown"]
+    assert "| Анна | Задача | — |" in p["markdown"]

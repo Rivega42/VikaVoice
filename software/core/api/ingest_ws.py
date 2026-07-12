@@ -24,10 +24,14 @@ import wave
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 
+from core.analytics.talk_time import talk_time
 from core.api.enrollment import router as enrollment_router
 from core.asr.base import make_backend
 from core.diarization.base import make_diarizer
+from core.export.markdown import protocol_to_markdown
 from core.storage import db
+from core.summarize.llm import OllamaChat, OpenAICompatible
+from core.summarize.protocol import Protocol, summarize_transcript
 
 logger = logging.getLogger("vikavoice.ingest")
 
@@ -112,6 +116,77 @@ def transcribe(session_id: str) -> dict:
     segments = diarizer.assign_speakers(segments, pcm, rate=rate)
     db.set_transcript(session_id, segments)
     return {"id": session_id, "status": "done", "segments": len(segments)}
+
+
+def _llm_backend():
+    """Фабрика LLM для протокола встречи (подменяется в тестах).
+
+    SUMMARY_BACKEND=ollama (дефолт, офлайн) | openai (OCPlatform/облако:
+    LLM_BASE_URL + LLM_API_KEY из окружения — секретов в репозитории нет).
+    """
+    kind = os.environ.get("SUMMARY_BACKEND", "ollama")
+    if kind == "ollama":
+        return OllamaChat(
+            host=os.environ.get("OLLAMA_HOST", "http://localhost:11434"),
+            model=os.environ.get("SUMMARY_MODEL", "qwen2.5:3b"),
+        )
+    if kind == "openai":
+        base, key = os.environ.get("LLM_BASE_URL"), os.environ.get("LLM_API_KEY")
+        if not base or not key:
+            raise HTTPException(
+                status_code=501, detail="LLM_BASE_URL/LLM_API_KEY не настроены"
+            )
+        return OpenAICompatible(
+            base_url=base, api_key=key, model=os.environ.get("SUMMARY_MODEL", "")
+        )
+    raise HTTPException(status_code=501, detail=f"неизвестный SUMMARY_BACKEND {kind!r}")
+
+
+@app.post("/sessions/{session_id}/summarize")
+def summarize(session_id: str) -> dict:
+    """Протокол встречи из готовой стенограммы (E3.1-E3.3)."""
+    rec = db.get_session(session_id)
+    if rec is None:
+        raise HTTPException(status_code=404, detail="сессия не найдена")
+    if not rec["transcript"]:
+        raise HTTPException(
+            status_code=409, detail="стенограммы ещё нет — сначала /transcribe"
+        )
+    try:
+        protocol = summarize_transcript(rec["transcript"], _llm_backend())
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"ошибка LLM: {exc}") from exc
+    db.set_protocol(session_id, protocol.to_dict())
+    return {"id": session_id, "protocol": protocol.to_dict()}
+
+
+@app.get("/sessions/{session_id}/protocol")
+def get_protocol(session_id: str) -> dict:
+    """Протокол + аналитика + Markdown-экспорт."""
+    rec = db.get_session(session_id)
+    if rec is None:
+        raise HTTPException(status_code=404, detail="сессия не найдена")
+    if not rec["protocol"]:
+        raise HTTPException(status_code=404, detail="протокол ещё не построен")
+    proto = rec["protocol"]
+    analytics = talk_time(rec["transcript"] or [])
+    p = Protocol(
+        meeting_name=proto.get("meeting_name", ""),
+        summary=proto.get("summary", ""),
+        decisions=proto.get("decisions", []),
+        key_points=proto.get("key_points", []),
+    )
+    from core.summarize.protocol import ActionItem  # локальный импорт против цикла
+
+    p.action_items = [ActionItem(**a) for a in proto.get("action_items", [])]
+    return {
+        "id": session_id,
+        "protocol": proto,
+        "analytics": analytics,
+        "markdown": protocol_to_markdown(p, analytics),
+    }
 
 
 @app.websocket("/ingest")

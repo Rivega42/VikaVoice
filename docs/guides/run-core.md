@@ -52,7 +52,20 @@ curl -X POST http://localhost:8200/sessions/<id>/transcribe  # прогнать 
 curl http://localhost:8200/sessions/<id>/transcript          # сегменты с таймингами
 ```
 
-Оценка качества: `python -m core.metrics.wer reference.txt hypothesis.txt`.
+Протокол встречи (нужна LLM: Ollama локально или OpenAI-совместимый endpoint):
+
+```bash
+curl -X POST http://localhost:8200/sessions/<id>/summarize   # построить протокол
+curl http://localhost:8200/sessions/<id>/protocol            # JSON + talk-time + Markdown
+```
+
+Сценарий «Знакомство» (голосовые профили; нужен эмбеддер — E2.2):
+`POST /enroll/start` (с `"consent": true`!) -> `POST /enroll/{id}/audio` -> `finish`;
+`DELETE /profiles/{name}` — безусловное удаление; `POST /profiles/end-meeting` —
+зачистка отпечатков «на встречу».
+
+Оценка качества: `python -m core.metrics.wer reference.txt hypothesis.txt`,
+DER — `core/metrics/der.py`.
 
 ## Docker
 
