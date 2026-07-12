@@ -58,8 +58,8 @@ def test_transcribe_happy_path(client, monkeypatch):
     t = client.get(f"/sessions/{sid}/transcript").json()
     assert t["status"] == "done"
     assert t["transcript"] == [
-        {"start": 0.0, "end": 0.3, "text": "тестовая реплика", "speaker": None}
-    ]
+        {"start": 0.0, "end": 0.3, "text": "тестовая реплика", "speaker": "S1"}
+    ]  # диаризатор-заглушка single помечает единственного спикера
 
 
 def test_transcribe_asr_error_is_recorded(client, monkeypatch):

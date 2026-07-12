@@ -30,9 +30,24 @@ CREATE TABLE IF NOT EXISTS sessions (
     created_at TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'queued',
     error TEXT,
-    transcript_json TEXT
+    transcript_json TEXT,
+    protocol_json TEXT
+);
+CREATE TABLE IF NOT EXISTS voice_profiles (
+    name TEXT PRIMARY KEY,
+    role TEXT,
+    embedding_json TEXT NOT NULL,
+    scope TEXT NOT NULL DEFAULT 'meeting',
+    consent_at TEXT NOT NULL,
+    created_at TEXT NOT NULL
 );
 """
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(sessions)")}
+    if "protocol_json" not in cols:
+        conn.execute("ALTER TABLE sessions ADD COLUMN protocol_json TEXT")
 
 
 def db_path() -> pathlib.Path:
@@ -44,7 +59,8 @@ def db_path() -> pathlib.Path:
 def _conn() -> sqlite3.Connection:
     conn = sqlite3.connect(db_path())
     conn.row_factory = sqlite3.Row
-    conn.execute(_SCHEMA)
+    conn.executescript(_SCHEMA)
+    _migrate(conn)
     return conn
 
 
@@ -58,7 +74,7 @@ def create_session(session_id: str, wav_path: str, source: str | None, rate: int
                 wav_path,
                 source,
                 rate,
-                _dt.datetime.now(_dt.UTC).isoformat(timespec="seconds"),
+                _now(),
             ),
         )
 
@@ -79,17 +95,70 @@ def set_error(session_id: str, message: str) -> None:
         )
 
 
+def set_protocol(session_id: str, protocol: dict) -> None:
+    with _conn() as c:
+        c.execute(
+            "UPDATE sessions SET protocol_json=? WHERE id=?",
+            (json.dumps(protocol, ensure_ascii=False), session_id),
+        )
+
+
+def _now() -> str:
+    return _dt.datetime.now(_dt.UTC).isoformat(timespec="seconds")
+
+
+def save_profile(
+    name: str, role: str | None, embedding: list[float], scope: str, consent_at: str
+) -> None:
+    """Голосовой отпечаток = биометрические ПДн: сохраняем ТОЛЬКО с меткой согласия
+    (152-ФЗ, см. docs/compliance/152fz.md). scope: meeting (до конца встречи) | org."""
+    with _conn() as c:
+        c.execute(
+            "INSERT OR REPLACE INTO voice_profiles"
+            "(name, role, embedding_json, scope, consent_at, created_at)"
+            "VALUES(?,?,?,?,?,?)",
+            (name, role, json.dumps(embedding), scope, consent_at, _now()),
+        )
+
+
+def list_profiles() -> list[dict]:
+    with _conn() as c:
+        rows = c.execute(
+            "SELECT name, role, scope, consent_at, created_at FROM voice_profiles "
+            "ORDER BY created_at"
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_profile_embeddings() -> dict[str, list[float]]:
+    with _conn() as c:
+        rows = c.execute("SELECT name, embedding_json FROM voice_profiles").fetchall()
+    return {r["name"]: json.loads(r["embedding_json"]) for r in rows}
+
+
+def delete_profile(name: str) -> bool:
+    """Право на удаление биометрии — безусловное (152-ФЗ)."""
+    with _conn() as c:
+        cur = c.execute("DELETE FROM voice_profiles WHERE name=?", (name,))
+    return cur.rowcount > 0
+
+
+def delete_profiles_scoped_meeting() -> int:
+    """Зачистка отпечатков со scope=meeting (конец встречи — дефолтный сценарий)."""
+    with _conn() as c:
+        cur = c.execute("DELETE FROM voice_profiles WHERE scope='meeting'")
+    return cur.rowcount
+
+
 def get_session(session_id: str) -> dict | None:
     with _conn() as c:
         row = c.execute("SELECT * FROM sessions WHERE id=?", (session_id,)).fetchone()
     if row is None:
         return None
     d = dict(row)
-    if d.get("transcript_json"):
-        d["transcript"] = json.loads(d.pop("transcript_json"))
-    else:
-        d.pop("transcript_json", None)
-        d["transcript"] = None
+    for col, key in (("transcript_json", "transcript"), ("protocol_json", "protocol")):
+        raw = d.pop(col, None)
+        d[key] = json.loads(raw) if raw else None
     return d
 
 

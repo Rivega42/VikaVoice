@@ -24,12 +24,15 @@ import wave
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 
+from core.api.enrollment import router as enrollment_router
 from core.asr.base import make_backend
+from core.diarization.base import make_diarizer
 from core.storage import db
 
 logger = logging.getLogger("vikavoice.ingest")
 
 app = FastAPI(title="VikaVoice Core — Audio Ingest")
+app.include_router(enrollment_router)
 
 DEFAULT_INGEST_DIR = "data/ingest_sessions"
 
@@ -105,6 +108,8 @@ def transcribe(session_id: str) -> dict:
     except Exception as exc:  # ошибка бэкенда — фиксируем в записи сессии
         db.set_error(session_id, str(exc))
         raise HTTPException(status_code=502, detail=f"ошибка ASR: {exc}") from exc
+    diarizer = make_diarizer(os.environ.get("VIKAVOICE_DIARIZER", "single"))
+    segments = diarizer.assign_speakers(segments, pcm, rate=rate)
     db.set_transcript(session_id, segments)
     return {"id": session_id, "status": "done", "segments": len(segments)}
 
