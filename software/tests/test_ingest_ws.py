@@ -93,3 +93,33 @@ def test_two_sessions_get_distinct_files(client):
             ws.send_bytes(FRAME_100MS)
     files = list(out.glob("session_*.wav"))
     assert len(files) == 2, "uuid-имена не должны коллидировать"
+
+
+def test_token_required_when_env_set(client, monkeypatch):
+    monkeypatch.setenv("VIKAVOICE_INGEST_TOKEN", "secret-tok")
+    c, out = client
+    # без токена — close 1008, файла нет
+    with pytest.raises(WebSocketDisconnect) as e, c.websocket_connect("/ingest") as ws:
+        ws.send_text(json.dumps(HEADER))
+        ws.receive_bytes()
+    assert e.value.code == 1008
+    assert not list(out.glob("*.wav"))
+    # с неверным токеном — тоже 1008
+    with pytest.raises(WebSocketDisconnect) as e, c.websocket_connect("/ingest") as ws:
+        ws.send_text(json.dumps({**HEADER, "token": "wrong"}))
+        ws.receive_bytes()
+    assert e.value.code == 1008
+    assert not list(out.glob("*.wav"))
+    # с верным токеном — happy path
+    with c.websocket_connect("/ingest") as ws:
+        ws.send_text(json.dumps({**HEADER, "token": "secret-tok"}))
+        ws.send_bytes(FRAME_100MS)
+    assert len(list(out.glob("session_*.wav"))) == 1
+
+
+def test_open_mode_without_env(client):
+    c, out = client
+    with c.websocket_connect("/ingest") as ws:
+        ws.send_text(json.dumps(HEADER))  # токена нет и не требуется
+        ws.send_bytes(FRAME_100MS)
+    assert len(list(out.glob("session_*.wav"))) == 1

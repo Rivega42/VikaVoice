@@ -9,9 +9,12 @@
 Эндпоинт: ws://<host>:8200/ingest
 Каталог записи: env VIKAVOICE_INGEST_DIR (по умолчанию data/ingest_sessions).
 
-⚠️ В v1 нет аутентификации и TLS — только доверенная LAN
-   (см. docs/architecture/security-threat-model.md, T1).
+Аутентификация: если задан env VIKAVOICE_INGEST_TOKEN, заголовок сессии обязан
+содержать совпадающее поле "token" (иначе close 1008). Без переменной — открытый
+режим для доверенной LAN. TLS — терминировать реверс-прокси перед ядром
+(см. docs/architecture/security-threat-model.md, T1).
 """
+import hmac
 import json
 import logging
 import os
@@ -73,6 +76,12 @@ async def ingest(ws: WebSocket) -> None:
                     rate = int(cfg.get("rate", 16000))
                 except (ValueError, TypeError, AttributeError):
                     await ws.close(code=1003, reason="заголовок должен быть валидным JSON")
+                    break
+                required = os.environ.get("VIKAVOICE_INGEST_TOKEN")
+                if required and not hmac.compare_digest(
+                    str(cfg.get("token", "")), required
+                ):
+                    await ws.close(code=1008, reason="неверный или отсутствующий token")
                     break
                 session_path = _out_dir() / f"session_{uuid.uuid4().hex}.wav"
                 wav = wave.open(str(session_path), "wb")

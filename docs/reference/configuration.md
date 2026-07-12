@@ -8,6 +8,7 @@
 | Переменная | По умолчанию | Назначение |
 |-----------|--------------|-----------|
 | `VIKAVOICE_INGEST_DIR` | `data/ingest_sessions` | каталог записи сессий ingest (в docker-образе — `/data/ingest_sessions`) |
+| `VIKAVOICE_INGEST_TOKEN` | — (открытый режим) | если задан — ingest требует поле `token` в заголовке сессии ([протокол](api/ingest-ws.md)) |
 | `EDITION` | `edge` | `edge` \| `cloud` \| `onprem` — см. [deployment](../architecture/deployment.md) |
 | `ASR_BACKEND` | `whisper` | `whisper` \| `remote` — см. `core/asr/base.py` |
 | `WHISPER_URL` | `http://whisper:8178/inference` | адрес вендоренного whisper-сервера |
