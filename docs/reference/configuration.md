@@ -20,6 +20,8 @@
 | `SUMMARY_BACKEND` | `ollama` | `ollama` \| `openai` (OpenAI-совместимый OCPlatform/облако) |
 | `OLLAMA_HOST` / `SUMMARY_MODEL` | `http://localhost:11434` / `qwen2.5:3b` | локальная LLM протокола |
 | `LLM_BASE_URL` / `LLM_API_KEY` | — | для `SUMMARY_BACKEND=openai`; секреты только в окружении |
+| `VIKAVOICE_MAX_SESSION_MB` | `512` | лимит записи одной сессии; превышение -> close 1009 (T10) |
+| `VIKAVOICE_AUTO_TRANSCRIBE` | — | `1` = транскрибация фоном сразу по завершении сессии |
 
 ## Конфиг устройства `/etc/vikavoice/config.yaml` (целевой контракт, EPIC-5/7)
 

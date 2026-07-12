@@ -52,6 +52,9 @@ curl -X POST http://localhost:8200/sessions/<id>/transcribe  # прогнать 
 curl http://localhost:8200/sessions/<id>/transcript          # сегменты с таймингами
 ```
 
+Веб-кабинет (скелет): откройте `http://localhost:8200/` — список встреч,
+стенограмма, протокол и поиск в одном экране.
+
 Протокол встречи (нужна LLM: Ollama локально или OpenAI-совместимый endpoint):
 
 ```bash

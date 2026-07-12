@@ -17,6 +17,7 @@
 import argparse
 import asyncio
 import math
+import os
 import struct
 
 RATE = 16000
@@ -102,6 +103,9 @@ async def main_async(args):
             "channels": 1,
             "source": "test" if args.test else args.source,
         }
+        token = args.token or os.environ.get("VIKAVOICE_INGEST_TOKEN")
+        if token:
+            header["token"] = token
         await ws.send(json.dumps(header))
         print(f">> Подключено к {args.server}. Источник: "
               f"{'test' if args.test else args.source}. Ctrl+C для остановки.")
@@ -118,6 +122,8 @@ def main():
     p.add_argument("--source", choices=["system", "mic", "both"], default="system")
     p.add_argument("--list", action="store_true", help="показать аудиоустройства")
     p.add_argument("--test", action="store_true", help="синтетический сигнал без устройств")
+    p.add_argument("--token", default=None,
+                   help="токен устройства (или env VIKAVOICE_INGEST_TOKEN)")
     args = p.parse_args()
     if args.list:
         list_devices()

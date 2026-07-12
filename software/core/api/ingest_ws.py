@@ -9,6 +9,11 @@
 Эндпоинт: ws://<host>:8200/ingest
 Каталог записи: env VIKAVOICE_INGEST_DIR (по умолчанию data/ingest_sessions).
 
+Лимит сессии: env VIKAVOICE_MAX_SESSION_MB (по умолчанию 512) — превышение
+закрывает соединение кодом 1009, записанное до лимита сохраняется (threat model T10).
+Автотранскрибация: env VIKAVOICE_AUTO_TRANSCRIBE=1 — по завершении сессии
+транскрибация запускается фоновым тредом (иначе — вручную POST /transcribe).
+
 Аутентификация: если задан env VIKAVOICE_INGEST_TOKEN, заголовок сессии обязан
 содержать совпадающее поле "token" (иначе close 1008). Без переменной — открытый
 режим для доверенной LAN. TLS — терминировать реверс-прокси перед ядром
@@ -19,12 +24,14 @@ import json
 import logging
 import os
 import pathlib
+import threading
 import uuid
 import wave
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 
 from core.analytics.talk_time import talk_time
+from core.api.cabinet import router as cabinet_router
 from core.api.enrollment import router as enrollment_router
 from core.asr.base import make_backend
 from core.diarization.base import make_diarizer
@@ -37,6 +44,7 @@ logger = logging.getLogger("vikavoice.ingest")
 
 app = FastAPI(title="VikaVoice Core — Audio Ingest")
 app.include_router(enrollment_router)
+app.include_router(cabinet_router)
 
 DEFAULT_INGEST_DIR = "data/ingest_sessions"
 
@@ -58,6 +66,21 @@ def handoff_to_asr(session_id: str, wav_path: str, source: str | None, rate: int
     return {"status": "queued", "id": session_id}
 
 
+def _max_session_bytes() -> int:
+    return int(float(os.environ.get("VIKAVOICE_MAX_SESSION_MB", "512")) * 1024 * 1024)
+
+
+def _auto_transcribe(session_id: str) -> None:
+    """Фоновая транскрибация завершённой сессии (VIKAVOICE_AUTO_TRANSCRIBE=1)."""
+    try:
+        transcribe(session_id)
+        logger.info("автотранскрибация завершена: %s", session_id)
+    except HTTPException as exc:
+        logger.warning("автотранскрибация %s: %s", session_id, exc.detail)
+    except Exception:
+        logger.exception("автотранскрибация %s упала", session_id)
+
+
 def _asr_backend():
     """Фабрика ASR-бэкенда из окружения (подменяется в тестах)."""
     kind = os.environ.get("ASR_BACKEND", "whisper")
@@ -76,6 +99,14 @@ def health() -> dict:
 @app.get("/sessions")
 def sessions() -> list[dict]:
     return db.list_sessions()
+
+
+@app.get("/search")
+def search(q: str = "") -> dict:
+    """Полнотекстовый поиск по готовым стенограммам («где обсуждали …», E7.1)."""
+    if not q.strip():
+        raise HTTPException(status_code=422, detail="параметр q обязателен")
+    return {"q": q, "results": db.search_transcripts(q)}
 
 
 @app.get("/sessions/{session_id}/transcript")
@@ -198,6 +229,8 @@ async def ingest(ws: WebSocket) -> None:
     source = None
     rate = 16000
     frames = 0
+    written = 0
+    limit = _max_session_bytes()
     try:
         while True:
             msg = await ws.receive()
@@ -239,7 +272,16 @@ async def ingest(ws: WebSocket) -> None:
                         reason="первым сообщением должен быть JSON-заголовок (ADR-0009)",
                     )
                     break
-                wav.writeframes(msg["bytes"])
+                chunk = msg["bytes"]
+                if written + len(chunk) > limit:
+                    # T10: защита диска — записанное сохраняем, поток обрываем.
+                    await ws.close(
+                        code=1009,
+                        reason=f"превышен лимит сессии {limit // (1024 * 1024)} МБ",
+                    )
+                    break
+                wav.writeframes(chunk)
+                written += len(chunk)
                 frames += 1
     except WebSocketDisconnect:
         pass
@@ -251,3 +293,7 @@ async def ingest(ws: WebSocket) -> None:
                 "handoff_to_asr -> %s",
                 handoff_to_asr(session_id, str(session_path), source, rate),
             )
+            if os.environ.get("VIKAVOICE_AUTO_TRANSCRIBE") == "1":
+                threading.Thread(
+                    target=_auto_transcribe, args=(session_id,), daemon=True
+                ).start()
