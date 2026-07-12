@@ -65,24 +65,24 @@
 WER замерен на тестовом наборе и зафиксирован в docs.
 
 - **E1.1 Вендоринг и запуск Whisper-сервера**
-  - [ ] Прогнать `vendor_meetily.sh`, зафиксировать `MEETILY_REF` на конкретный коммит/тег
-  - [ ] Собрать `Dockerfile.server-cpu`, скачать модель base (ru)
+  - [x] Прогнать `vendor_meetily.sh`, зафиксировать `MEETILY_REF` — **v0.4.0** (с v0.4.0 `transcript_processor.py` внутри `backend/app/`)
+  - [ ] Собрать `Dockerfile.server-cpu`, скачать модель base (ru) — требует Docker-хоста
   - [ ] Smoke-тест `/inference` вручную + в CI (nightly, не на каждый PR)
 - **E1.2 Реализация LocalWhisper (`core/asr/base.py`)**
-  - [ ] POST PCM → парсинг ответа в `list[Segment]`
-  - [ ] Обработка ошибок/таймаутов, ретраи
-  - [ ] Contract-тест с golden-файлом (короткий WAV → ожидаемые сегменты)
+  - [x] POST WAV(PCM) на `/inference` → парсинг `verbose_json` в `list[Segment]`
+  - [x] Обработка ошибок: error-тело сервера, HTTP-статусы, таймаут (ретраи — по мере нужды)
+  - [x] Contract-тесты формата сервера Meetily v0.4.0 (`tests/test_asr_localwhisper.py`, MockTransport)
 - **E1.3 Связка ingest → ASR**
-  - [ ] Очередь задач: завершение WS-сессии ставит транскрипцию
-  - [ ] Хранение результатов: SQLite по образцу Meetily `app/db.py` ([data-model](architecture/data-model.md))
-  - [ ] `GET /sessions/{id}/transcript`
-  - [ ] Квоты/лимиты на сессию (threat model T10)
+  - [x] Завершение WS-сессии регистрирует её в SQLite со статусом `queued`
+  - [x] Хранение результатов: `core/storage/db.py` (env `VIKAVOICE_DB`; [data-model](architecture/data-model.md))
+  - [x] `GET /sessions`, `GET /sessions/{id}/transcript`, `POST /sessions/{id}/transcribe`
+  - [ ] Фоновый воркер вместо синхронного POST; квоты/лимиты на сессию (threat model T10)
 - **E1.4 Протокол ingest → production-ready (ADR-0009 → accepted)**
-  - [ ] Аутентификация токеном устройства + wss:// (threat model T1)
-  - [ ] Замер трафика тонкого устройства; решение по Opus
+  - [x] Аутентификация токеном устройства (`VIKAVOICE_INGEST_TOKEN`, close 1008)
+  - [ ] wss:// (терминация TLS реверс-прокси перед ядром); замер трафика тонкого устройства; решение по Opus
 - **E1.5 Метрика качества**
   - [ ] Собрать 3–5 тестовых русских записей (публичные + свои, с согласиями)
-  - [ ] Скрипт подсчёта WER; baseline для base/medium в docs ([audio-pipeline](architecture/audio-pipeline.md))
+  - [x] Скрипт подсчёта WER: `core/metrics/wer.py` (S/D/I, нормализация ru); baseline — после записей
 
 ---
 

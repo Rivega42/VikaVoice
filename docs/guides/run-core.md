@@ -9,8 +9,10 @@
 |-----------|-----------|
 | Приём аудио по WS (`core/api/ingest_ws.py`) | ✅ рабочий скелет: заголовок → PCM-кадры → WAV; покрыт тестами (`software/tests/`) |
 | Клиент-компаньон (`companion-client/`) | ✅ отправка потока и `--test`-режим; захват реального системного звука зависит от ОС/устройств — проверяйте `--list` |
-| Handoff в ASR | ❌ **заглушка** — WAV пишется, транскрипции нет (EPIC-1) |
-| `core/asr/base.py`, `core/voice_enrollment/` | интерфейсы; реализации — EPIC-1/2 |
+| Handoff в ASR | ✅ сессия регистрируется в SQLite (`queued`); транскрибация — `POST /sessions/{id}/transcribe` |
+| `core/asr/base.py` | ✅ `LocalWhisper` реализован (вендоренный whisper.cpp-сервер, `verbose_json`) |
+| `core/storage/db.py`, `core/metrics/wer.py` | ✅ хранение сессий/стенограмм; WER-метрика |
+| `core/voice_enrollment/` | интерфейс; эмбеддер — EPIC-2 |
 | docker-compose | скелет: `ingest` собирается; `whisper` требует вендоринга; `ollama` — профиль |
 
 ## Локальный запуск (без Docker)
@@ -38,8 +40,19 @@ python companion-client/system_audio_client.py --list                     # ус
 python companion-client/system_audio_client.py --server ws://<IP>:8200/ingest --source system
 ```
 
-⚠️ Протокол пока без аутентификации и TLS — только доверенная LAN
-([подробнее](../reference/api/ingest-ws.md#ограничения-v1-зафиксированы-план--adr-0009)).
+Аутентификация: задайте `VIKAVOICE_INGEST_TOKEN` на ядре и то же значение полем
+`token` в заголовке клиента. TLS терминируйте реверс-прокси
+([подробнее](../reference/api/ingest-ws.md)).
+
+## Стенограмма записанной сессии
+
+```bash
+curl http://localhost:8200/sessions                          # список, статус queued/done/error
+curl -X POST http://localhost:8200/sessions/<id>/transcribe  # прогнать ASR (нужен whisper-сервер)
+curl http://localhost:8200/sessions/<id>/transcript          # сегменты с таймингами
+```
+
+Оценка качества: `python -m core.metrics.wer reference.txt hypothesis.txt`.
 
 ## Docker
 
