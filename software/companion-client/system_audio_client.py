@@ -15,9 +15,9 @@
   python system_audio_client.py --test                # без звуковых устройств (синус)
 """
 import argparse
-import os
 import asyncio
 import math
+import os
 import struct
 
 RATE = 16000

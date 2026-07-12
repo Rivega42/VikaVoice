@@ -167,3 +167,11 @@ def test_search_finds_phrase(client, monkeypatch):
     assert hit["matches"][0]["text"] == "тестовая реплика"
     assert client.get("/search", params={"q": "ничегонет"}).json()["results"] == []
     assert client.get("/search").status_code == 422
+
+
+def test_cabinet_page_served(client):
+    r = client.get("/")
+    assert r.status_code == 200
+    assert "text/html" in r.headers["content-type"]
+    for token in ("VikaVoice", "/sessions", "/search"):
+        assert token in r.text

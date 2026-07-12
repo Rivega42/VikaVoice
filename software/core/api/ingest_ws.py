@@ -31,6 +31,7 @@ import wave
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 
 from core.analytics.talk_time import talk_time
+from core.api.cabinet import router as cabinet_router
 from core.api.enrollment import router as enrollment_router
 from core.asr.base import make_backend
 from core.diarization.base import make_diarizer
@@ -43,6 +44,7 @@ logger = logging.getLogger("vikavoice.ingest")
 
 app = FastAPI(title="VikaVoice Core — Audio Ingest")
 app.include_router(enrollment_router)
+app.include_router(cabinet_router)
 
 DEFAULT_INGEST_DIR = "data/ingest_sessions"
 
