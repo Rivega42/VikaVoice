@@ -1,0 +1,31 @@
+name: "Feature / задача"
+description: "Новая функциональность или задача из roadmap"
+labels: ["enhancement"]
+body:
+  - type: input
+    id: epic
+    attributes:
+      label: Эпик
+      description: "Номер эпика из docs/roadmap.md (например EPIC-2), если применимо"
+      placeholder: "EPIC-1"
+  - type: textarea
+    id: what
+    attributes:
+      label: Что нужно сделать
+      description: "Формулировка результата, а не процесса"
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Критерии готовности
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Контекст и ссылки
+      description: "Связанные документы, ADR, issues"

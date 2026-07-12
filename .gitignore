@@ -1,4 +1,39 @@
+# Python
 __pycache__/
 *.pyc
-software/core/vendor/meetily/
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Секреты и конфиги окружения
 .env
+.env.*
+!.env.example
+
+# Вендоренный код (подтягивается scripts/vendor_meetily.sh)
+software/core/vendor/meetily/
+
+# Аудиозаписи и данные сессий — НИКОГДА не коммитить (ПДн/биометрия, 152-ФЗ)
+*.wav
+*.mp3
+*.flac
+*.ogg
+data/
+ingest_sessions/
+
+# Модели (веса скачиваются отдельно, свои лицензии)
+*.gguf
+*.onnx
+*.bin
+models/
+
+# ОС и редакторы
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

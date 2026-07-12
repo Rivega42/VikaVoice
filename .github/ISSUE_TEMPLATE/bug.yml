@@ -1,0 +1,31 @@
+name: "Bug"
+description: "Ошибка в коде, документации или сборке"
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: Что сломано
+      description: "Фактическое поведение vs ожидаемое"
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Как воспроизвести
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Окружение
+      placeholder: "ОС, Python, железо (RPi5/RPi4/ПК), редакция (Edge/Cloud)"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Логи / вывод
+      description: "⚠️ Не вставляйте аудиозаписи, стенограммы, токены и IP инфраструктуры"
+      render: text

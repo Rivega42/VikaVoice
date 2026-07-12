@@ -1,0 +1,4 @@
+# Зависимости ядра (ingest). Dev-зависимости — pyproject.toml [dev].
+fastapi>=0.111
+uvicorn[standard]>=0.30
+websockets>=12.0

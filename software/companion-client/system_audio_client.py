@@ -14,7 +14,10 @@
   python system_audio_client.py --source both        # система + микрофон (микс)
   python system_audio_client.py --test                # без звуковых устройств (синус)
 """
-import argparse, asyncio, sys, math, struct
+import argparse
+import asyncio
+import math
+import struct
 
 RATE = 16000
 FRAME_MS = 100
@@ -87,11 +90,19 @@ async def stream_test(ws, seconds=3.0):
 
 
 async def main_async(args):
+    import json
+
     import websockets
     async with websockets.connect(args.server, max_size=None) as ws:
-        # маленький заголовок-конфиг первым сообщением (JSON-строка)
-        await ws.send('{"rate":%d,"format":"pcm_s16le","channels":1,"source":"%s"}'
-                      % (RATE, "test" if args.test else args.source))
+        # заголовок-конфиг СТРОГО первым сообщением (протокол v1, ADR-0009)
+        header = {
+            "v": 1,
+            "rate": RATE,
+            "format": "pcm_s16le",
+            "channels": 1,
+            "source": "test" if args.test else args.source,
+        }
+        await ws.send(json.dumps(header))
         print(f">> Подключено к {args.server}. Источник: "
               f"{'test' if args.test else args.source}. Ctrl+C для остановки.")
         if args.test:
@@ -109,7 +120,8 @@ def main():
     p.add_argument("--test", action="store_true", help="синтетический сигнал без устройств")
     args = p.parse_args()
     if args.list:
-        list_devices(); return
+        list_devices()
+        return
     try:
         asyncio.run(main_async(args))
     except KeyboardInterrupt:
