@@ -32,8 +32,7 @@ mkdir -p "$DST"
 # Что копируем (см. docs/compliance/reuse-map.md):
 COPY_PATHS=(
   "LICENSE.md"                              # обязательно: сохраняем лицензию MIT
-  "backend/app"                             # FastAPI + хранение (main.py, db.py, ...)
-  "backend/transcript_processor.py"         # LLM-резюме
+  "backend/app"                             # FastAPI + хранение + transcript_processor (с v0.4.0 внутри app/)
   "backend/whisper-custom/server"           # HTTP-сервер Whisper
   "backend/docker-compose.yml"              # образец контейнеризации
   "backend/Dockerfile.server-cpu"
